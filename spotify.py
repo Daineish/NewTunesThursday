@@ -15,6 +15,16 @@ import argparse
 # Default Playlist
 thursday_playlist_url = 'https://open.spotify.com/playlist/5PK2WZI139tzi9CaJwsSvr?si=a6eac2bd5ff04567'
 
+# Default Users
+spotify_usernames = {
+    'r6t4ecnz80wzndh8vc3hmgrfj': 'Austyn Nagribianko',
+    '22rqpxzvwnggnueph2xozkk3a': 'Thomas John',
+    'daineish': 'Daine McNiven',
+    'kenneth.weech': 'Kenneth Weech',
+    'couple-a-scoops': 'Joel Kosa',
+    '12176962094': 'Jordan Lane'
+}
+
 # Usage and argument parsing
 parser = argparse.ArgumentParser(description='This is to be used with our "New Music Thursday" spotify playlist to extract recently ' +
                                              'added songs and send them to a facebook messenger chat.')
@@ -54,9 +64,13 @@ def get_track_string(track):
     Track added by daineish on March 24:
         "Thinkin Bout You" by Frank Ocean
     """
+    user_added = track['added_by']['id']
+    if user_added in spotify_usernames:
+        user_added = spotify_usernames[user_added]
+
     time_added = datetime.datetime.strptime(
         track['added_at'], '%Y-%m-%dT%H:%M:%SZ')
-    user_added = track['added_by']['id']
+    
     track_name = track['track']['name']
     track_artists = track['track']['artists']
     artists_string = ""
