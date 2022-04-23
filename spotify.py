@@ -1,29 +1,17 @@
 #!/usr/bin/env python3
 
+import ast
 import datetime
-import string
 import sys
-from xmlrpc.client import DateTime
-from numpy import empty
-import spotipy as sp
 import fbchat
-from getpass import getpass
-import pprint
-from spotipy.oauth2 import SpotifyClientCredentials
 import argparse
+import spotipy as sp
+from numpy import empty
+from getpass import getpass
+from spotipy.oauth2 import SpotifyClientCredentials
 
 # Default Playlist
 thursday_playlist_url = 'https://open.spotify.com/playlist/5PK2WZI139tzi9CaJwsSvr?si=a6eac2bd5ff04567'
-
-# Default Users
-spotify_usernames = {
-    'r6t4ecnz80wzndh8vc3hmgrfj': 'Austyn Nagribianko',
-    '22rqpxzvwnggnueph2xozkk3a': 'Thomas John',
-    'daineish': 'Daine McNiven',
-    'kenneth.weech': 'Kenneth Weech',
-    'couple-a-scoops': 'Joel Kosa',
-    '12176962094': 'Jordan Lane'
-}
 
 # Usage and argument parsing
 parser = argparse.ArgumentParser(description='This is to be used with our "New Music Thursday" spotify playlist to extract recently ' +
@@ -40,6 +28,8 @@ parser.add_argument('--spotifyUsername', type=str, dest='spotify_username', defa
                     help='your spotify username')
 parser.add_argument('--facebookEmail', type=str, dest='fb_email', default='null',
                     help='your facebook email, when using the message action, this will be the account from which you send the message')
+parser.add_argument('--usernameMapFile', type=str, dest='username_map_file', default='username_map.dict',
+                    help='a file mapping usernames to actual names of people for printing')
 
 args = parser.parse_args()
 
@@ -56,23 +46,36 @@ def get_playlist_tracks(username, playlist_id):
     return tracks
 
 
-def get_track_string(track):
+def get_username(args, user_id):
+    """
+    parse username from file in args
+    """
+    rv = user_id
+    with open(args.username_map_file) as file:
+        username_dict = ast.literal_eval(file.read())
+        if(user_id in username_dict):
+            rv = username_dict[user_id]
+
+    return rv
+
+
+def get_track_string(args, track):
     """
     get a formatted string with the information I want from a track.
 
     Example output (single song):
-    Track added by daineish on March 24:
+    Track added by Daine McNiven on March 24:
         "Thinkin Bout You" by Frank Ocean
     """
-    user_added = track['added_by']['id']
-    if user_added in spotify_usernames:
-        user_added = spotify_usernames[user_added]
+    user_added = get_username(args, track['added_by']['id'])
 
     time_added = datetime.datetime.strptime(
         track['added_at'], '%Y-%m-%dT%H:%M:%SZ')
-    
     track_name = track['track']['name']
     track_artists = track['track']['artists']
+    user_added_id = track['added_by']['id']
+    user_added = get_username(args, user_added_id)
+
     artists_string = ""
     for artist in track_artists[:-1]:
         if(artists_string is not ""):
@@ -97,7 +100,7 @@ def print_tracks(args, playlist_tracks):
             track['added_at'], '%Y-%m-%dT%H:%M:%SZ')
 
         if(time_added > args.start_date):
-            print(get_track_string(track))
+            print(get_track_string(args, track))
 
 
 def message_tracks(args, playlist_tracks):
@@ -114,25 +117,29 @@ def message_tracks(args, playlist_tracks):
         fb_username = args.fb_email
     fb_client = fbchat.Client(fb_username, getpass())
 
+    # get group message ID
     if(args.messengerID == 'null'):
         groupchat_uid = input("groupchat uid: ")
     else:
         groupchat_uid = args.messengerID
 
+    # send header message to group
     msg = "-" * 20 + \
         "\nSongs added on or after " + args.start_date.strftime('%B %d')
     sent = fb_client.send(fbchat.Message(text=msg),
                           thread_id=groupchat_uid, thread_type=fbchat.ThreadType.GROUP)
 
+    # send message for each track in list
     for track in playlist_tracks:
         time_added = datetime.datetime.strptime(
             track['added_at'], '%Y-%m-%dT%H:%M:%SZ')
 
         if(time_added > args.start_date):
-            msg = get_track_string(track)
+            msg = get_track_string(args, track)
             sent = fb_client.send(fbchat.Message(text=msg),
                                   thread_id=groupchat_uid, thread_type=fbchat.ThreadType.GROUP)
 
+    # send footer message to group
     msg = "-" * 20
     sent = fb_client.send(fbchat.Message(text=msg),
                           thread_id=groupchat_uid, thread_type=fbchat.ThreadType.GROUP)
@@ -152,3 +159,5 @@ elif(args.result_action == 'message'):
     #                 https://github.com/fbchat-dev/fbchat/issues/615#issuecomment-710673863 for
     #                 the change that worked for me.
     message_tracks(args, playlist_tracks)
+else:
+    sys.exit("Internal error: Unknown action")
