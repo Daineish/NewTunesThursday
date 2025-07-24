@@ -24,6 +24,15 @@ def add_tracks_to_playlist(spotify, tracks, playlist_id):
     spotify.playlist_add_items(playlist_id, track_ids)
 
 
+def clear_playlist(spotify, tracks, playlist_id):
+    """
+    clear all 'tracks' from a 'playlist_id'
+    calls spotify API
+    """
+    track_ids = [x["track"]["uri"] for x in tracks]
+    spotify.playlist_remove_all_occurrences_of_items(playlist_id, track_ids)
+
+
 def create_new_playlist(
     spotify, username, date, title="NTT Weekly ", desc="New Tunes Thursday Weekly "
 ):

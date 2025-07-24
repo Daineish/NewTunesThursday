@@ -12,7 +12,8 @@ from helpers import (
 )
 
 # Default Playlist
-thursday_playlist_url = "https://open.spotify.com/playlist/5PK2WZI139tzi9CaJwsSvr"
+master_playlist_url = "https://open.spotify.com/playlist/0yeHWhTnNLBKkMG9SowLWt"
+weekly_playlist_url = "https://open.spotify.com/playlist/3zxIx3JxIIQTqGIjSM6c8E"
 
 # Usage and argument parsing
 parser = argparse.ArgumentParser(
@@ -44,8 +45,15 @@ parser.add_argument(
     "--spotifyPlaylistID",
     type=str,
     dest="playlist_url",
-    default=thursday_playlist_url,
+    default=master_playlist_url,
     help="spotify URL or URI from which we gather track information",
+)
+parser.add_argument(
+    "--weeklyPlaylistID",
+    type=str,
+    dest="weekly_playlist_url",
+    default=weekly_playlist_url,
+    help="spotify URL or URI of weekly playlist",
 )
 parser.add_argument(
     "--spotifyUsername",
@@ -98,34 +106,12 @@ elif args.result_action == "message":
     )
     fb_help.message_tracks(args, playlist_tracks)
 elif args.result_action == "migrate":
-    # Step 1: Copy tracks from previous playlist to master playlist
-    # Step 2: Delete previous playlist (?)
-    # Step 3: Create new playlist
-
-    # TODO: Get a better way to get the previous playlist
-    #       Current strategy is to use args.date with hardcoded
-    #       playlist name. Should be fine since playlists will
-    #       only be created/deleted via this script but still hacky
-    prev_date_str = args.start_date.strftime("%b %-d, %Y")
-    next_date_str = (args.start_date + datetime.timedelta(days=7)).strftime(
-        "%b %-d, %Y"
+    # Step 1: Copy tracks from weekly playlist to master playlist
+    # Step 2: Clear weekly playlist
+    prev_tracks = sp_help.get_playlist_tracks(
+        spotify, args.spotify_username, args.weekly_playlist_url
     )
-    previous_title = "NTT Weekly " + prev_date_str
-
-    all_playlists = spotify.user_playlists(args.spotify_username, 100)
-    found = False
-    for cur_playlist in all_playlists["items"]:
-        if cur_playlist["name"] == previous_title:
-            found = True
-            prev_playlist_id = cur_playlist["id"]
-            prev_tracks = sp_help.get_playlist_tracks(
-                spotify, args.spotify_username, prev_playlist_id
-            )
-
-            sp_help.add_tracks_to_playlist(spotify, prev_tracks, args.playlist_url)
-            sp_help.create_new_playlist(spotify, args.spotify_username, next_date_str)
-
-    if not found:
-        print("Couldn't find previous playlist")
+    sp_help.add_tracks_to_playlist(spotify, prev_tracks, args.playlist_url)
+    sp_help.clear_playlist(spotify, prev_tracks, args.weekly_playlist_url)
 else:
     sys.exit("Internal error: Unknown action")
