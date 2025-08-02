@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import asyncio
 import datetime
 import sys
 import argparse
@@ -42,18 +43,18 @@ parser.add_argument(
     help="FB messenger chat uid",
 )
 parser.add_argument(
-    "--spotifyPlaylistID",
+    "--masterPlaylistID",
     type=str,
-    dest="playlist_url",
+    dest="master_playlist_url",
     default=master_playlist_url,
-    help="spotify URL or URI from which we gather track information",
+    help="spotify URL or URI to which we copy to during --action migrate",
 )
 parser.add_argument(
     "--weeklyPlaylistID",
     type=str,
     dest="weekly_playlist_url",
     default=weekly_playlist_url,
-    help="spotify URL or URI of weekly playlist",
+    help="spotify URL or URI of weekly playlist to copy from with --action migrate or to print/message",
 )
 parser.add_argument(
     "--spotifyUsername",
@@ -63,11 +64,11 @@ parser.add_argument(
     help="your spotify username",
 )
 parser.add_argument(
-    "--facebookEmail",
+    "--facebookCookies",
     type=str,
-    dest="fb_email",
+    dest="fb_cookies_file",
     default="null",
-    help="your facebook email, when using the message action, this will be the account from which you send the message",
+    help="your facebook cookies file",
 )
 parser.add_argument(
     "--usernameMapFile",
@@ -88,30 +89,30 @@ def print_tracks(args, playlist_tracks):
         time_added = datetime.datetime.strptime(track["added_at"], "%Y-%m-%dT%H:%M:%SZ")
 
         if time_added > args.start_date:
-            print(ge_help.get_track_string(args, track))
+            print(ge_help.get_track_string(args.username_map_file, track))
 
 
 # Using OAuth now since script now alters playlists
 spotify = sp.Spotify(auth_manager=SpotifyOAuth(scope="playlist-modify-public"))
 
-
 if args.result_action == "print":
     playlist_tracks = sp_help.get_playlist_tracks(
-        spotify, args.spotify_username, args.playlist_url
+        spotify, args.spotify_username, args.weekly_playlist_url
     )
     print_tracks(args, playlist_tracks)
 elif args.result_action == "message":
     playlist_tracks = sp_help.get_playlist_tracks(
-        spotify, args.spotify_username, args.playlist_url
+        spotify, args.spotify_username, args.weekly_playlist_url
     )
-    fb_help.message_tracks(args, playlist_tracks)
+    asyncio.run(fb_help.message_tracks(args, playlist_tracks))
 elif args.result_action == "migrate":
     # Step 1: Copy tracks from weekly playlist to master playlist
     # Step 2: Clear weekly playlist
     prev_tracks = sp_help.get_playlist_tracks(
         spotify, args.spotify_username, args.weekly_playlist_url
     )
-    sp_help.add_tracks_to_playlist(spotify, prev_tracks, args.playlist_url)
+    sp_help.add_tracks_to_playlist(spotify, prev_tracks, args.master_playlist_url)
     sp_help.clear_playlist(spotify, prev_tracks, args.weekly_playlist_url)
+
 else:
     sys.exit("Internal error: Unknown action")

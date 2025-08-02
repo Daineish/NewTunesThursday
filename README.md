@@ -5,7 +5,7 @@ A python script to handle some actions for the guys' New Tunes Thursday Playlist
 Example usage:
 
 - python3 spotify.py --help
-- python3 spotify.py --migrate
+- python3 spotify.py --action migrate
 
 Features:
 

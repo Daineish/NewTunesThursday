@@ -43,4 +43,4 @@ def create_new_playlist(
     playlist_title = title + date
     playlist_desc = desc + date
 
-    rv = spotify.user_playlist_create(username, playlist_title, True, playlist_desc)
+    return spotify.user_playlist_create(username, playlist_title, True, playlist_desc)
