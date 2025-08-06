@@ -22,18 +22,13 @@ async def message_tracks(args, playlist_tracks):
     if await bot.isLoggedIn():
         # send header message to group
         msg = "-" * 20
-
+        msg += "\n" + "Clink Clank\n"
+        msg += "-" * 20
         await bot.sendMessage(msg, groupchat_uid, ThreadType.GROUP)
 
-        # Don't really need this anymore with new system, could just do entire weekly playlist
         for track in playlist_tracks:
-            time_added = datetime.datetime.strptime(
-                track["added_at"], "%Y-%m-%dT%H:%M:%SZ"
-            )
-
-            if time_added > args.start_date:
-                msg = generic_helpers.get_track_string(args.username_map_file, track)
-                await bot.sendMessage(msg, groupchat_uid, ThreadType.GROUP)
+            msg = generic_helpers.get_track_string(args.username_map_file, track)
+            await bot.sendMessage(msg, groupchat_uid, ThreadType.GROUP)
 
         # send footer message to group
         msg = "-" * 20

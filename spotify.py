@@ -99,11 +99,19 @@ if args.result_action == "print":
     playlist_tracks = sp_help.get_playlist_tracks(
         spotify, args.spotify_username, args.weekly_playlist_url
     )
+
     print_tracks(args, playlist_tracks)
 elif args.result_action == "message":
     playlist_tracks = sp_help.get_playlist_tracks(
         spotify, args.spotify_username, args.weekly_playlist_url
     )
+
+    # Double check that we want to send #x songs
+    num_tracks = len(playlist_tracks)
+    answer = input(f"Are you sure you want to send {num_tracks} songs?").strip().lower()
+    if answer != "yes" and answer != "y":
+        sys.exit("User aborted")
+
     asyncio.run(fb_help.message_tracks(args, playlist_tracks))
 elif args.result_action == "migrate":
     # Step 1: Copy tracks from weekly playlist to master playlist
