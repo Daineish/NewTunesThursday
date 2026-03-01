@@ -1,21 +1,17 @@
 import datetime
-import ast
+import json
 
 
-def get_username(map_file, user_id):
+def get_all_usernames(map_file):
     """
-    parse username from file
+    parse all usernames from file
     """
-    rv = user_id
     with open(map_file) as file:
-        username_dict = ast.literal_eval(file.read())
-        if user_id in username_dict:
-            rv = username_dict[user_id]
-
-    return rv
+        username_dict = json.loads(file.read())
+    return username_dict
 
 
-def get_track_string(map_file, track):
+def get_track_string(map_file, track, usernames):
     """
     get a formatted string with the information I want from a track.
 
@@ -23,13 +19,14 @@ def get_track_string(map_file, track):
     Track added by Daine McNiven on March 24:
         "Thinkin Bout You" by Frank Ocean
     """
-    user_added = get_username(map_file, track["added_by"]["id"])
-
     time_added = datetime.datetime.strptime(track["added_at"], "%Y-%m-%dT%H:%M:%SZ")
     track_name = track["track"]["name"]
     track_artists = track["track"]["artists"]
     user_added_id = track["added_by"]["id"]
-    user_added = get_username(map_file, user_added_id)
+    if user_added_id in usernames:
+        user_added = usernames[user_added_id]
+    else:
+        user_added = "Unknown User"
 
     artists_string = ""
     for artist in track_artists[:-1]:

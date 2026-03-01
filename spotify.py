@@ -25,7 +25,7 @@ parser.add_argument(
     "--date",
     type=lambda s: datetime.datetime.strptime(s, "%Y-%m-%d"),
     dest="start_date",
-    default="2022-01-01",
+    default=datetime.datetime.strptime("2022-01-01", "%Y-%m-%d"),
     help="earliest date from which we query songs, format: YYYY-MM-DD",
 )
 parser.add_argument(
@@ -85,11 +85,12 @@ def print_tracks(args, playlist_tracks):
     """
     prints information from playlist_tracks, with respect to arguments passed in arg
     """
+    usernames = ge_help.get_all_usernames(args.username_map_file)
     for track in playlist_tracks:
         time_added = datetime.datetime.strptime(track["added_at"], "%Y-%m-%dT%H:%M:%SZ")
 
         if time_added > args.start_date:
-            print(ge_help.get_track_string(args.username_map_file, track))
+            print(ge_help.get_track_string(args.username_map_file, track, usernames))
 
 
 # Using OAuth now since script now alters playlists
@@ -99,7 +100,6 @@ if args.result_action == "print":
     playlist_tracks = sp_help.get_playlist_tracks(
         spotify, args.spotify_username, args.weekly_playlist_url
     )
-
     print_tracks(args, playlist_tracks)
 elif args.result_action == "message":
     playlist_tracks = sp_help.get_playlist_tracks(

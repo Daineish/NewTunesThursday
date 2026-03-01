@@ -1,6 +1,4 @@
 from fbchat_muqit import Client, ThreadType
-from getpass import getpass
-import datetime
 from helpers import generic_helpers
 
 
@@ -17,6 +15,8 @@ async def message_tracks(args, playlist_tracks):
     else:
         groupchat_uid = args.messengerID
 
+    usernames = generic_helpers.get_all_usernames(args.username_map_file)
+
     bot = await Client.startSession(args.fb_cookies_file)
 
     if await bot.isLoggedIn():
@@ -27,7 +27,9 @@ async def message_tracks(args, playlist_tracks):
         await bot.sendMessage(msg, groupchat_uid, ThreadType.GROUP)
 
         for track in playlist_tracks:
-            msg = generic_helpers.get_track_string(args.username_map_file, track)
+            msg = generic_helpers.get_track_string(
+                args.username_map_file, track, usernames
+            )
             await bot.sendMessage(msg, groupchat_uid, ThreadType.GROUP)
 
         # send footer message to group

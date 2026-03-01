@@ -1,7 +1,3 @@
-import ast
-import datetime
-
-
 def get_playlist_tracks(spotify, username, playlist_id):
     """
     get all tracks from a specified playlist using spotify username
