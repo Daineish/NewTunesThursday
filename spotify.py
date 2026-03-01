@@ -7,7 +7,6 @@ import argparse
 import spotipy as sp
 from spotipy.oauth2 import SpotifyOAuth
 from helpers import (
-    fbchat_helpers as fb_help,
     spotify_helpers as sp_help,
     generic_helpers as ge_help,
 )
@@ -112,6 +111,7 @@ elif args.result_action == "message":
     if answer != "yes" and answer != "y":
         sys.exit("User aborted")
 
+    from helpers import fbchat_helpers as fb_help
     asyncio.run(fb_help.message_tracks(args, playlist_tracks))
 elif args.result_action == "migrate":
     # Step 1: Copy tracks from weekly playlist to master playlist
