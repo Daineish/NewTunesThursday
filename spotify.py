@@ -2,13 +2,16 @@
 
 import asyncio
 import datetime
+import os
 import sys
+
 import argparse
 import spotipy as sp
 from spotipy.oauth2 import SpotifyOAuth
 from helpers import (
     spotify_helpers as sp_help,
     generic_helpers as ge_help,
+    apple_music_helpers as am_help,
 )
 
 # Default Playlist
@@ -29,7 +32,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--action",
-    choices=["message", "print", "migrate"],
+    choices=["message", "print", "migrate", "apple"],
     dest="result_action",
     default="print",
     help="action which to take with results, either message group or print the restults",
@@ -112,6 +115,7 @@ elif args.result_action == "message":
         sys.exit("User aborted")
 
     from helpers import fbchat_helpers as fb_help
+
     asyncio.run(fb_help.message_tracks(args, playlist_tracks))
 elif args.result_action == "migrate":
     # Step 1: Copy tracks from weekly playlist to master playlist
@@ -121,6 +125,42 @@ elif args.result_action == "migrate":
     )
     sp_help.add_tracks_to_playlist(spotify, prev_tracks, args.master_playlist_url)
     sp_help.clear_playlist(spotify, prev_tracks, args.weekly_playlist_url)
+
+elif args.result_action == "apple":
+    # Fetch the weekly playlist and mirror it to a new Apple Music playlist
+    playlist_tracks = sp_help.get_playlist_tracks(
+        spotify, args.spotify_username, args.weekly_playlist_url
+    )
+
+    apple_team_id = os.environ.get("APPLE_TEAM_ID")
+    apple_key_id = os.environ.get("APPLE_KEY_ID")
+    apple_private_key = os.environ.get("APPLE_PRIVATE_KEY")
+    apple_user_token = os.environ.get("APPLE_MUSIC_USER_TOKEN")
+
+    if not all([apple_team_id, apple_key_id, apple_private_key, apple_user_token]):
+        sys.exit(
+            "Error: Apple Music credentials not set. "
+            "Set APPLE_TEAM_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY, and APPLE_MUSIC_USER_TOKEN."
+        )
+
+    if not playlist_tracks:
+        print("Weekly playlist is empty, skipping Apple Music sync.")
+        sys.exit(0)
+
+    dev_token = am_help.generate_developer_token(
+        apple_team_id, apple_key_id, apple_private_key
+    )
+    now = datetime.datetime.now()
+    last_thursday = now - datetime.timedelta(days=(now.weekday() - 3) % 7)
+    playlist_name = "New Music Thursday " + last_thursday.strftime("%b %-d")
+    folder_name = "New Music Thursday " + str(last_thursday.year)
+    am_help.mirror_spotify_tracks_to_apple_music(
+        playlist_tracks,
+        dev_token,
+        apple_user_token,
+        playlist_name,
+        folder_name=folder_name,
+    )
 
 else:
     sys.exit("Internal error: Unknown action")
