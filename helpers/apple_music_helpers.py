@@ -18,6 +18,19 @@ def generate_developer_token(team_id, key_id, private_key):
     return jwt.encode(payload, private_key, algorithm="ES256", headers=headers)
 
 
+def get_user_storefront(developer_token, user_token):
+    """
+    Returns the two-letter storefront code for the authenticated user (e.g. "ca", "us").
+    """
+    headers = {
+        "Authorization": f"Bearer {developer_token}",
+        "Music-User-Token": user_token,
+    }
+    response = requests.get("https://api.music.apple.com/v1/me/storefront", headers=headers)
+    response.raise_for_status()
+    return response.json()["data"][0]["id"]
+
+
 def search_track(developer_token, track_name, artist_name, storefront="us"):
     """
     Search the Apple Music catalog for a track by name and artist.
@@ -123,6 +136,10 @@ def mirror_spotify_tracks_to_apple_music(
 
     Returns (playlist_id, found_count, not_found_count).
     """
+    if storefront == "us":
+        storefront = get_user_storefront(developer_token, user_token)
+        print(f"Using storefront: {storefront}")
+
     folder_id = None
     if folder_name:
         print(f"Locating Apple Music folder: {folder_name}")
