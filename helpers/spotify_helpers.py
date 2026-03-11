@@ -27,16 +27,3 @@ def clear_playlist(spotify, tracks, playlist_id):
     """
     track_ids = [x["track"]["uri"] for x in tracks]
     spotify.playlist_remove_all_occurrences_of_items(playlist_id, track_ids)
-
-
-def create_new_playlist(
-    spotify, username, date, title="NTT Weekly ", desc="New Tunes Thursday Weekly "
-):
-    """
-    create a new spotify playlist titled 'title' + date
-    calls spotify API
-    """
-    playlist_title = title + date
-    playlist_desc = desc + date
-
-    return spotify.user_playlist_create(username, playlist_title, True, playlist_desc)
