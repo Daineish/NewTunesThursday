@@ -16,7 +16,7 @@ jobs:
       - run: echo "$SPOTIPY_CACHE" > .cache
         env:
           SPOTIPY_CACHE: ${{ secrets.SPOTIPY_CACHE }}
-      - run: pip install spotipy
+      - run: pip install spotipy PyJWT
       - run: python spotify.py --action migrate
         env:
           SPOTIPY_CLIENT_ID: ${{ secrets.SPOTIPY_CLIENT_ID }}
